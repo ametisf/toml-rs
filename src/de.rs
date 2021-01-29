@@ -1781,25 +1781,36 @@ impl<'a> Deserializer<'a> {
     // great to defer parsing everything until later.
     fn inline_table(&mut self) -> Result<(Span, Vec<TablePair<'a>>), Error> {
         let mut ret = Vec::new();
-        self.eat_whitespace()?;
-        if let Some(span) = self.eat_spanned(Token::RightBrace)? {
-            return Ok((span, ret));
-        }
+
+        let intermediate = |me: &mut Deserializer<'_>| {
+            loop {
+                me.eat_whitespace()?;
+                if !me.eat(Token::Newline)? && !me.eat_comment()? {
+                    break;
+                }
+            }
+            Ok(())
+        };
+
         loop {
+            intermediate(self)?;
+            if let Some(span) = self.eat_spanned(Token::RightBrace)? {
+                return Ok((span, ret));
+            }
             let key = self.dotted_key()?;
             self.eat_whitespace()?;
             self.expect(Token::Equals)?;
             self.eat_whitespace()?;
             let value = self.value()?;
             self.add_dotted_key(key, value, &mut ret)?;
-
-            self.eat_whitespace()?;
-            if let Some(span) = self.eat_spanned(Token::RightBrace)? {
-                return Ok((span, ret));
+            intermediate(self)?;
+            if !self.eat(Token::Comma)? {
+                break;
             }
-            self.expect(Token::Comma)?;
-            self.eat_whitespace()?;
         }
+        intermediate(self)?;
+        let span = self.expect_spanned(Token::RightBrace)?;
+        Ok((span, ret))
     }
 
     // TODO(#140): shouldn't buffer up this entire array in memory, it'd be

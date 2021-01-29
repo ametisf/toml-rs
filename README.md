@@ -1,3 +1,13 @@
+# This is a fork
+This repository is a fork of the <https://github.com/alexcrichton/toml-rs>
+crate.
+
+This version removes the unnecessary restriction of
+[inline tables](https://toml.io/en/v1.0.0-rc.1#inline-table),
+allowing line breaks and trailing comas the same way arrays do.
+
+---
+
 # toml-rs
 
 [![Latest Version](https://img.shields.io/crates/v/toml.svg)](https://crates.io/crates/toml)
